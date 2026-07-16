@@ -21,8 +21,12 @@ database.exec(`
 // Helpers
 const getAllTasks = () => database.prepare("SELECT * FROM tasks").all();
 const getTask = (id) => database.prepare("SELECT * FROM tasks WHERE id = ?").get(id);
-const createTask = (title, done) => database.prepare("INSERT INTO tasks (title, done) VALUES (?, ?)").run(title, done);
-const updateTask = (id, title, done) => database.prepare("UPDATE tasks SET title = ?, done = ? WHERE id = ?").run(title, done, id);
+const createTask = (title, done) => database.prepare("INSERT INTO tasks (title, done) VALUES (?, ?) RETURNING *").get(title, done);
+const updateTask = (id, title, done) => {
+    if (title && done) return database.prepare("UPDATE tasks SET title = ?, done = ? WHERE id = ? RETURNING *").get(title, done, id);
+    if (title) return database.prepare("UPDATE tasks SET title = ? WHERE id = ? RETURNING *").get(title, id);
+    return database.prepare("UPDATE tasks SET done = ? WHERE id = ? RETURNING *").get(done, id);
+};
 const deleteTask = (id) => database.prepare("DELETE FROM tasks WHERE id = ?").run(id);
 
 module.exports = {
