@@ -1,6 +1,9 @@
 const express = require("express");
 const app = express();
 
+const tasksRouter = require("./tasks.router");
+app.use("/tasks", tasksRouter);
+
 const endpoints = ["/tasks"]
 
 app.get("/health", (req, res) => {
