@@ -146,7 +146,7 @@ router.put("/:id", (req, res) => {
     const { title, done } = req.body;
     if (!title && done === undefined) return res.status(400).json({ "error": "Include at least one field to update" });
 
-    if (done !== undefined && (done !== 0 && done !== 1)) return res.status(400).json({ "error": "Done must be 0 or 1" });
+    if (typeof done !== "boolean") return res.status(400).json({ "error": "Done must be boolean" });
 
     const task = updateTask(id, title, done);
     if (!task) return res.status(404).json({ "error": `Task ${id} not found` });

@@ -23,9 +23,9 @@ const getAllTasks = () => database.prepare("SELECT * FROM tasks").all();
 const getTask = (id) => database.prepare("SELECT * FROM tasks WHERE id = ?").get(id);
 const createTask = (title, done) => database.prepare("INSERT INTO tasks (title, done) VALUES (?, ?) RETURNING *").get(title, done);
 const updateTask = (id, title, done) => {
-    if (title && done) return database.prepare("UPDATE tasks SET title = ?, done = ? WHERE id = ? RETURNING *").get(title, done, id);
+    if (title && done) return database.prepare("UPDATE tasks SET title = ?, done = ? WHERE id = ? RETURNING *").get(title, sqlBoolean(done), id);
     if (title) return database.prepare("UPDATE tasks SET title = ? WHERE id = ? RETURNING *").get(title, id);
-    return database.prepare("UPDATE tasks SET done = ? WHERE id = ? RETURNING *").get(done, id);
+    return database.prepare("UPDATE tasks SET done = ? WHERE id = ? RETURNING *").get(sqlBoolean(done), id);
 };
 const deleteTask = (id) => database.prepare("DELETE FROM tasks WHERE id = ?").run(id);
 
@@ -36,3 +36,7 @@ module.exports = {
     updateTask,
     deleteTask
 };
+
+function sqlBoolean(bool) {
+    return bool ? 1 : 0;
+}
