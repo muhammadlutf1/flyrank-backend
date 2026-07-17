@@ -1,5 +1,11 @@
 const router = require("express").Router();
-const { getTasks, getTask, createTask, updateTask, deleteTask } = require("./db");
+const {
+  getTasks,
+  getTask,
+  createTask,
+  updateTask,
+  deleteTask,
+} = require("./db");
 
 /**
  * @openapi
@@ -17,12 +23,12 @@ const { getTasks, getTask, createTask, updateTask, deleteTask } = require("./db"
  *                 $ref: '#/components/schemas/Task'
  */
 router.get("/", (req, res) => {
-    let { search, done, limit } = req.query;
+  let { search, done, limit } = req.query;
 
-    done = done === "true" ? 1 : done === "false" ? 0 : undefined;
-    search = search ? `%${search}%` : undefined;
+  done = done === "true" ? 1 : done === "false" ? 0 : undefined;
+  search = search ? `%${search}%` : undefined;
 
-    res.json(getTasks(search, done, parseInt(limit)));
+  res.json(getTasks(search, done, parseInt(limit)));
 });
 
 /**
@@ -36,7 +42,7 @@ router.get("/", (req, res) => {
  *         required: true
  *         schema:
  *           type: integer
- *     responses:     
+ *     responses:
  *       200:
  *         description: OK
  *         content:
@@ -57,13 +63,13 @@ router.get("/", (req, res) => {
  *               $ref: '#/components/schemas/Error'
  */
 router.get("/:id", (req, res) => {
-    const { id } = req.params;
-    if (!id) return res.status(400).json({ "error": "Missing id" });
+  const { id } = req.params;
+  if (!id) return res.status(400).json({ error: "Missing id" });
 
-    const task = getTask(id);
-    if (!task) return res.status(404).json({ "error": `Task ${id} not found` });
+  const task = getTask(id);
+  if (!task) return res.status(404).json({ error: `Task ${id} not found` });
 
-    res.json(getTask(id));
+  res.json(getTask(id));
 });
 
 /**
@@ -92,14 +98,14 @@ router.get("/:id", (req, res) => {
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error' 
+ *               $ref: '#/components/schemas/Error'
  */
 router.post("/", (req, res) => {
-    const { title } = req.body;
-    if (!title) return res.status(400).json({ "error": "Missing title" });
+  const { title } = req.body;
+  if (!title) return res.status(400).json({ error: "Missing title" });
 
-    const task = createTask(title, 0); // 0: false
-    res.status(201).json(task);
+  const task = createTask(title, 0); // 0: false
+  res.status(201).json(task);
 });
 
 /**
@@ -139,25 +145,33 @@ router.post("/", (req, res) => {
  *               $ref: '#/components/schemas/Error'
  *       404:
  *         description: Not found - task not found
- *         content: 
+ *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
 router.put("/:id", (req, res) => {
-    const { id } = req.params;
-    if (!id) return res.status(400).json({ "error": "Missing id" });
+  const { id } = req.params;
+  if (!id) return res.status(400).json({ error: "Missing id" });
 
-    const { title, done } = req.body;
-    if (!title && done === undefined) return res.status(400).json({ "error": "Include at least one field to update" });
+  const { title, done } = req.body;
+  if (!title && done === undefined)
+    return res
+      .status(400)
+      .json({ error: "Include at least one field to update" });
 
-    if (done !== undefined && typeof done !== "boolean") return res.status(400).json({ "error": "Done must be a boolean" });
+  if (done !== undefined && typeof done !== "boolean")
+    return res.status(400).json({ error: "Done must be a boolean" });
 
-    const task = updateTask(id, title, typeof done === "boolean" ? done ? 1 : 0 : undefined);
-    if (!task) return res.status(404).json({ "error": `Task ${id} not found` });
+  const task = updateTask(
+    id,
+    title,
+    typeof done === "boolean" ? (done ? 1 : 0) : undefined,
+  );
+  if (!task) return res.status(404).json({ error: `Task ${id} not found` });
 
-    res.json(task);
-})
+  res.json(task);
+});
 
 /**
  * @openapi
@@ -187,13 +201,13 @@ router.put("/:id", (req, res) => {
  *               $ref: '#/components/schemas/Error'
  */
 router.delete("/:id", (req, res) => {
-    const { id } = req.params;
-    if (!id) return res.status(400).json({ "error": "Missing id" });
+  const { id } = req.params;
+  if (!id) return res.status(400).json({ error: "Missing id" });
 
-    const { changes } = deleteTask(id);
-    if (!changes) return res.status(404).json({ "error": `Task ${id} not found` });
+  const { changes } = deleteTask(id);
+  if (!changes) return res.status(404).json({ error: `Task ${id} not found` });
 
-    res.status(204).end();
+  res.status(204).end();
 });
 
 module.exports = router;

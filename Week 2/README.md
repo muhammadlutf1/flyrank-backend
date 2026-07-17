@@ -31,6 +31,7 @@ Server runs on `http://localhost:3000`.
 | ------ | ------------ | --------------------------------- |
 | GET    | `/`          | API info                          |
 | GET    | `/health`    | Health check                      |
+| GET    | `/stats`     | Stats endpoint                    |
 | GET    | `/tasks`     | List all tasks                    |
 | GET    | `/tasks/:id` | Get a single task by id           |
 | POST   | `/tasks`     | Create a new task                 |
