@@ -19,24 +19,27 @@ database.exec(`
 
 
 // Helpers
-const getAllTasks = () => database.prepare("SELECT * FROM tasks").all();
+const getTasks = (search, done, limit) => {
+    const limitClause = limit ? `LIMIT ${limit}` : "";
+
+    if (search && done) return database.prepare(`SELECT * FROM tasks WHERE title LIKE ? AND done = ? ${limitClause}`).all(search, done);
+    if (search) return database.prepare(`SELECT * FROM tasks WHERE title LIKE ? ${limitClause}`).all(search);
+    if (typeof done === "number") return database.prepare(`SELECT * FROM tasks WHERE done = ? ${limitClause}`).all(done);
+    return database.prepare(`SELECT * FROM tasks ${limitClause}`).all()
+};
 const getTask = (id) => database.prepare("SELECT * FROM tasks WHERE id = ?").get(id);
 const createTask = (title, done) => database.prepare("INSERT INTO tasks (title, done) VALUES (?, ?) RETURNING *").get(title, done);
 const updateTask = (id, title, done) => {
-    if (title && done) return database.prepare("UPDATE tasks SET title = ?, done = ? WHERE id = ? RETURNING *").get(title, sqlBoolean(done), id);
+    if (title && done) return database.prepare("UPDATE tasks SET title = ?, done = ? WHERE id = ? RETURNING *").get(title, done, id);
     if (title) return database.prepare("UPDATE tasks SET title = ? WHERE id = ? RETURNING *").get(title, id);
-    return database.prepare("UPDATE tasks SET done = ? WHERE id = ? RETURNING *").get(sqlBoolean(done), id);
+    return database.prepare("UPDATE tasks SET done = ? WHERE id = ? RETURNING *").get(done, id);
 };
 const deleteTask = (id) => database.prepare("DELETE FROM tasks WHERE id = ?").run(id);
 
 module.exports = {
-    getAllTasks,
+    getTasks,
     getTask,
     createTask,
     updateTask,
     deleteTask
 };
-
-function sqlBoolean(bool) {
-    return bool ? 1 : 0;
-}

@@ -1,5 +1,5 @@
 const router = require("express").Router();
-const { getAllTasks, getTask, createTask, updateTask, deleteTask } = require("./db");
+const { getTasks, getTask, createTask, updateTask, deleteTask } = require("./db");
 
 /**
  * @openapi
@@ -17,7 +17,12 @@ const { getAllTasks, getTask, createTask, updateTask, deleteTask } = require("./
  *                 $ref: '#/components/schemas/Task'
  */
 router.get("/", (req, res) => {
-    res.json(getAllTasks());
+    let { search, done, limit } = req.query;
+
+    done = done === "true" ? 1 : done === "false" ? 0 : undefined;
+    search = search ? `%${search}%` : undefined;
+
+    res.json(getTasks(search, done, parseInt(limit)));
 });
 
 /**
@@ -146,9 +151,9 @@ router.put("/:id", (req, res) => {
     const { title, done } = req.body;
     if (!title && done === undefined) return res.status(400).json({ "error": "Include at least one field to update" });
 
-    if (typeof done !== "boolean") return res.status(400).json({ "error": "Done must be boolean" });
+    if (done !== undefined && typeof done !== "boolean") return res.status(400).json({ "error": "Done must be a boolean" });
 
-    const task = updateTask(id, title, done);
+    const task = updateTask(id, title, typeof done === "boolean" ? done ? 1 : 0 : undefined);
     if (!task) return res.status(404).json({ "error": `Task ${id} not found` });
 
     res.json(task);
