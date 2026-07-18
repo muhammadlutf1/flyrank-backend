@@ -46,4 +46,4 @@ Interactive documentation with a "Try it out" button is available at:
 http://localhost:3000/docs
 ```
 
-![Swagger UI screenshot](./preview)
+![Swagger UI screenshot](./preview.png)
