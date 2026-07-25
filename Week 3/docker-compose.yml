@@ -1,0 +1,31 @@
+services:
+  database:
+    image: postgres:16
+    ports:
+      - 5433:5432
+    env_file:
+      - .env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    healthcheck:
+      test:
+        ["CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    ports:
+      - 3000:3000
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB}
+    volumes:
+      - ./src:/app/src
+    depends_on:
+      database:
+        condition: service_healthy
+
+volumes:
+  pgdata:
