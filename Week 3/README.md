@@ -2,8 +2,10 @@
 
 A small CRUD API for managing a to-do list, create, read, update, and delete tasks, with interactive docs via Swagger UI.
 
-This is a solution for the assignment: **W3 · A1 — Connecting your CRUD to the database**
-Assignment link: [BE-02](https://internship.flyrank.ai/intern/assignments/CUSTOM-MRNC9HQC-956E8C0B)
+This is a solution for the assignment:
+
+- **W3 · A1 — Connecting your CRUD to the database** - Assignment link: [BE-02](https://internship.flyrank.ai/intern/assignments/CUSTOM-MRNC9HQC-956E8C0B)
+- **W3 · A2 - Containerize your stack** - Assignment link: [BE-04](https://internship.flyrank.ai/intern/assignments/BE-04)
 
 ## Tech stack
 
