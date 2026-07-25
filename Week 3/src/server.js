@@ -1,9 +1,12 @@
-const express = require("express");
-const app = express();
+import express from "express";
+import path from "node:path";
+import swaggerJsdoc from "swagger-jsdoc";
+import swaggerUi from "swagger-ui-express";
 
-const path = require("path");
-const swaggerJsdoc = require("swagger-jsdoc");
-const swaggerUi = require("swagger-ui-express");
+import tasksRouter from "./tasks.router.js";
+import { getTasksStats } from "./db.js";
+
+const app = express();
 
 const specs = swaggerJsdoc({
   definition: {
@@ -21,7 +24,7 @@ const specs = swaggerJsdoc({
           properties: {
             id: { type: "integer", example: 1 },
             title: { type: "string", example: "Buy milk" },
-            done: { type: "boolean", example: 0 },
+            done: { type: "boolean", example: false },
           },
           required: ["id", "title", "done"],
         },
@@ -35,17 +38,14 @@ const specs = swaggerJsdoc({
     },
   },
   apis: [
-    path.join(__dirname, "server.js"),
-    path.join(__dirname, "tasks.router.js"),
+    path.join(import.meta.dirname, "server.js"),
+    path.join(import.meta.dirname, "tasks.router.js"),
   ],
 });
 
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(specs));
 
 app.use(express.json());
-
-const tasksRouter = require("./tasks.router");
-const { getTasksStats } = require("./db");
 
 const endpoints = ["/tasks", "/tasks/:id", "/health", "/stats", "/docs"];
 
@@ -115,8 +115,11 @@ app.get("/health", (req, res) => {
  *                   type: integer
  *                   example: 5
  */
-app.get("/stats", (req, res) => {
-  const stats = getTasksStats();
+app.get("/stats", async (req, res) => {
+  const stats = await getTasksStats();
+
+  stats.done = Number(stats.done);
+  stats.open = Number(stats.open);
   res.json({ total: stats.done + stats.open, ...stats });
 });
 

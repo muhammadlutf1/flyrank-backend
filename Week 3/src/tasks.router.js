@@ -1,11 +1,7 @@
-const router = require("express").Router();
-const {
-  getTasks,
-  getTask,
-  createTask,
-  updateTask,
-  deleteTask,
-} = require("./db");
+import { Router } from "express";
+import { getTasks, getTask, createTask, updateTask, deleteTask } from "./db.js";
+
+const router = Router();
 
 /**
  * @openapi
@@ -22,13 +18,13 @@ const {
  *               items:
  *                 $ref: '#/components/schemas/Task'
  */
-router.get("/", (req, res) => {
+router.get("/", async (req, res) => {
   let { search, done, limit } = req.query;
 
-  done = done === "true" ? 1 : done === "false" ? 0 : undefined;
+  done = done === "true" ? true : done === "false" ? false : undefined;
   search = search ? `%${search}%` : undefined;
 
-  res.json(getTasks(search, done, parseInt(limit)));
+  res.json(await getTasks(search, done, parseInt(limit)));
 });
 
 /**
@@ -62,14 +58,14 @@ router.get("/", (req, res) => {
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get("/:id", (req, res) => {
+router.get("/:id", async (req, res) => {
   const { id } = req.params;
   if (!id) return res.status(400).json({ error: "Missing id" });
 
-  const task = getTask(id);
+  const task = await getTask(id);
   if (!task) return res.status(404).json({ error: `Task ${id} not found` });
 
-  res.json(getTask(id));
+  res.json(task);
 });
 
 /**
@@ -100,11 +96,13 @@ router.get("/:id", (req, res) => {
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post("/", (req, res) => {
-  const { title } = req.body;
+router.post("/", async (req, res) => {
+  const { title, done } = req.body;
   if (!title) return res.status(400).json({ error: "Missing title" });
+  if (done !== undefined && typeof done !== "boolean")
+    return res.status(400).json({ error: "Done must be a boolean" });
 
-  const task = createTask(title, 0); // 0: false
+  const task = await createTask(title, done ?? false);
   res.status(201).json(task);
 });
 
@@ -150,7 +148,7 @@ router.post("/", (req, res) => {
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.put("/:id", (req, res) => {
+router.put("/:id", async (req, res) => {
   const { id } = req.params;
   if (!id) return res.status(400).json({ error: "Missing id" });
 
@@ -163,11 +161,7 @@ router.put("/:id", (req, res) => {
   if (done !== undefined && typeof done !== "boolean")
     return res.status(400).json({ error: "Done must be a boolean" });
 
-  const task = updateTask(
-    id,
-    title,
-    typeof done === "boolean" ? (done ? 1 : 0) : undefined,
-  );
+  const task = await updateTask(id, title, done);
   if (!task) return res.status(404).json({ error: `Task ${id} not found` });
 
   res.json(task);
@@ -200,14 +194,15 @@ router.put("/:id", (req, res) => {
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.delete("/:id", (req, res) => {
+router.delete("/:id", async (req, res) => {
   const { id } = req.params;
   if (!id) return res.status(400).json({ error: "Missing id" });
 
-  const { changes } = deleteTask(id);
-  if (!changes) return res.status(404).json({ error: `Task ${id} not found` });
+  const { rowCount } = await deleteTask(id);
+  if (rowCount === 0)
+    return res.status(404).json({ error: `Task ${id} not found` });
 
   res.status(204).end();
 });
 
-module.exports = router;
+export default router;

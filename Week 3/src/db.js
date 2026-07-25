@@ -1,82 +1,88 @@
-const { DatabaseSync } = require("node:sqlite");
-
-const database = new DatabaseSync(":memory:");
-
-database.exec(`
-    CREATE TABLE tasks (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT,
-        done BOOLEAN
-    );
-
-    -- pre-filled
-    INSERT INTO tasks (title, done) 
-    VALUES 
-        ('Finish the assignment', 0),
-        ('Buy groceries', 1),
-        ('Go for a run', 0);
-`);
+import { Client } from "pg";
+const client = await new Client({
+  connectionString: process.env.DATABASE_URL,
+}).connect();
 
 // Helpers
-const getTasks = (search, done, limit) => {
+export const getTasks = async (search, done, limit) => {
   const limitClause = limit ? `LIMIT ${limit}` : "";
 
   if (search && done)
-    return database
-      .prepare(
-        `SELECT * FROM tasks WHERE title LIKE ? AND done = ? ${limitClause}`,
+    return (
+      await client.query(
+        `SELECT * FROM tasks WHERE title LIKE $1 AND done = $2 ${limitClause}`,
+        [search, done],
       )
-      .all(search, done);
+    ).rows;
+
   if (search)
-    return database
-      .prepare(`SELECT * FROM tasks WHERE title LIKE ? ${limitClause}`)
-      .all(search);
+    return (
+      await client.query(
+        `SELECT * FROM tasks WHERE title LIKE $1 ${limitClause}`,
+        [search],
+      )
+    ).rows;
+
   if (typeof done === "number")
-    return database
-      .prepare(`SELECT * FROM tasks WHERE done = ? ${limitClause}`)
-      .all(done);
-  return database.prepare(`SELECT * FROM tasks ${limitClause}`).all();
-};
-const getTask = (id) =>
-  database.prepare("SELECT * FROM tasks WHERE id = ?").get(id);
-const createTask = (title, done) =>
-  database
-    .prepare("INSERT INTO tasks (title, done) VALUES (?, ?) RETURNING *")
-    .get(title, done);
-const updateTask = (id, title, done) => {
-  if (title && done)
-    return database
-      .prepare("UPDATE tasks SET title = ?, done = ? WHERE id = ? RETURNING *")
-      .get(title, done, id);
-  if (title)
-    return database
-      .prepare("UPDATE tasks SET title = ? WHERE id = ? RETURNING *")
-      .get(title, id);
-  return database
-    .prepare("UPDATE tasks SET done = ? WHERE id = ? RETURNING *")
-    .get(done, id);
-};
-const deleteTask = (id) =>
-  database.prepare("DELETE FROM tasks WHERE id = ?").run(id);
+    return (
+      await client.query(`SELECT * FROM tasks WHERE done = $1 ${limitClause}`, [
+        done,
+      ])
+    ).rows;
 
-const getTasksStats = () => {
-  return database
-    .prepare(
-      `
-        SELECT
-            SUM(CASE WHEN done = 1 THEN 1 ELSE 0 END) AS done,
-            SUM(CASE WHEN done = 0 THEN 1 ELSE 0 END) AS open
-        FROM tasks
-    `,
+  return (await client.query(`SELECT * FROM tasks ${limitClause}`)).rows;
+};
+
+export const getTask = async (id) => {
+  return (await client.query("SELECT * FROM tasks WHERE id = $1", [id]))
+    .rows[0];
+};
+
+export const createTask = async (title, done) => {
+  return (
+    await client.query(
+      "INSERT INTO tasks (title, done) VALUES ($1, $2) RETURNING *",
+      [title, done],
     )
-    .get();
+  ).rows[0];
 };
 
-module.exports = {
-  getTasks,
-  getTask,
-  createTask,
-  updateTask,
-  deleteTask,
-  getTasksStats,
+export const updateTask = async (id, title, done) => {
+  if (title && done)
+    return (
+      await client.query(
+        "UPDATE tasks SET title = $1, done = $2 WHERE id = $3 RETURNING *",
+        [title, done, id],
+      )
+    ).rows[0];
+
+  if (title)
+    return (
+      await client.query(
+        "UPDATE tasks SET title = $1 WHERE id = $2 RETURNING *",
+        [title, id],
+      )
+    ).rows[0];
+
+  return (
+    await client.query("UPDATE tasks SET done = $1 WHERE id = $2 RETURNING *", [
+      done,
+      id,
+    ])
+  ).rows[0];
+};
+
+export const deleteTask = (id) => {
+  return client.query("DELETE FROM tasks WHERE id = $1", [id]);
+};
+
+export const getTasksStats = async () => {
+  return (
+    await client.query(`
+    SELECT
+      SUM(CASE WHEN done = true THEN 1 ELSE 0 END) AS done,
+      SUM(CASE WHEN done = false THEN 1 ELSE 0 END) AS open
+    FROM tasks
+  `)
+  ).rows[0];
 };
